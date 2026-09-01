@@ -1,0 +1,29 @@
+# Local development files
+.env
+data/
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git files
+.git/
+.gitignore
+
+# Documentation (optional - remove if you want docs deployed)
+# README.md
+
+# Test files (if any)
+test/
+*.test.js

@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/icons/(.*)",
+      "dest": "/public/icons/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/medication-reminders",
+      "schedule": "* * * * *"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
