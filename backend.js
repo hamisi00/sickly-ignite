@@ -5,6 +5,7 @@ const path = require('path');
 const cron = require('node-cron');
 const AfricasTalking = require('africastalking');
 const { sendSOSAlerts } = require('./sos-alerts');
+const ussdHandler = require('./lib/ussd-handler');
 
 const app = express();
 const PORT = 8000;
@@ -188,12 +189,46 @@ function scheduleSave() {
   saveTimeout = setTimeout(() => saveData(), 1000); // Save 1 second after last change
 }
 
-app.post('/ussd', (req, res) => {
+// Helper to detect if request is direct USSD from Africa's Talking or JSON from ignite.js
+function isDirectUSSDRequest(reqBody) {
+  const { sessionId, serviceCode, networkCode, text } = reqBody;
+
+  // Direct USSD requests have these fields and text is not JSON
+  if (!sessionId || !serviceCode || !networkCode) return false;
+
+  // Check if text is JSON (from ignite.js) or raw USSD input
+  const textStr = String(text || '').trim();
+  if (!textStr) return true; // Empty text is raw USSD
+
+  try {
+    const parsed = JSON.parse(textStr);
+    return !parsed.event; // If it has 'event' field, it's from ignite.js
+  } catch {
+    return true; // Not JSON = raw USSD
+  }
+}
+
+app.post('/ussd', async (req, res) => {
   console.log('--- BACKEND REQUEST ---');
   console.log(JSON.stringify(req.body, null, 2));
 
   const { text } = req.body;
 
+  // Route 1: Direct USSD from Africa's Talking
+  if (isDirectUSSDRequest(req.body)) {
+    console.log('Routing to direct USSD handler');
+    return ussdHandler.handleDirectUSSD(req, res, {
+      patients,
+      readings,
+      medications,
+      adherenceLog,
+      emergencyContacts,
+      sosEvents
+    });
+  }
+
+  // Route 2: JSON events from ignite.js (existing logic)
+  console.log('Routing to JSON event handler');
   try {
     const data = JSON.parse(text);
     const { event, patient, reading } = data;
